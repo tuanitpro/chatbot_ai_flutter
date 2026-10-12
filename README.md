@@ -74,13 +74,13 @@ Dùng origin có scheme, không thêm path hoặc dấu `/` cuối. Cả hai phi
 | Tham số | Ý nghĩa |
 |---|---|
 | `id` | ID bot cần mở |
-| `mode` | V1 mặc định `mobile`, V2 mặc định `widget` |
+| `mode` | Cả V1 và V2 dùng `mobile` để chat phủ kín WebView |
 | `client_id` | Mã app tích hợp |
 | `session_id` | Phiên hội thoại; app nên cung cấp theo người dùng/phiên hiện tại |
 | `color` | Màu chủ đạo dạng hex, không có `#` |
 | `language` | Ngôn ngữ ban đầu, ví dụ `en` hoặc `vi` |
 | `position` | Vị trí widget trên web |
-| `auto_open` | Đặt `true` để mở nội dung ngay khi popup xuất hiện |
+| `auto_open` | `mode=mobile` tự mở chat; mode widget dùng `true` để mở ngay |
 | `auto_init` | V2 đặt `false` để đợi native bridge rồi gọi `ChatWidget.init()` một lần |
 | `v` | Giá trị version/cache busting của URL script hoặc trang |
 
@@ -113,7 +113,7 @@ Future<void> openChatbot(BuildContext context) {
 }
 ```
 
-`ChatbotPopup` tải `/embed` trực tiếp, bật JavaScript/DOM storage, hiển thị tiến trình tải và nút thử lại khi lỗi. CSS được inject để bỏ khoảng trắng của khung trang trong WebView.
+`ChatbotPopup` tải `/embed` trực tiếp, bật JavaScript/DOM storage, hiển thị tiến trình tải và nút thử lại khi lỗi. FE quản lý layout `mode=mobile`; Flutter không inject CSS vào trang.
 
 Nút header của website phát `CHAT_CLOSE` và `TOGGLE_FULLSCREEN`; bridge chuyển chúng sang Flutter để đóng hoặc thay đổi kích thước popup. FE đang deploy phải hỗ trợ các nút/sự kiện này ở mode được chọn. Bản V1 không có nút X riêng của Flutter.
 
@@ -169,6 +169,9 @@ const widget = await window.ChatWidget.init({
   onTokenRefresh: () => callNative('onTokenRefresh'),
   getLanguage: () => callNative('getLanguage'),
   getEmployeeCode: () => callNative('getEmployeeCode'),
+  onClose: () => callNative('chatbotV2Control', 'CHAT_CLOSE'),
+  onFullscreenChange: data =>
+    callNative('chatbotV2Control', 'TOGGLE_FULLSCREEN', data),
 });
 ```
 
@@ -218,11 +221,13 @@ Khi renew thất bại, xử lý hết phiên đăng nhập ở Flutter. Bản m
 
 - `CHAT_CLOSE`: đóng popup Flutter.
 - `TOGGLE_FULLSCREEN`: phóng to hoặc trả popup về kích thước ban đầu.
-- HTML cha kiểm tra origin, source iframe, bot ID và channel trước khi chuyển sự kiện sang Flutter.
+- `widget.js` kiểm tra origin, source iframe, bot ID và channel trước khi gọi callback công khai `onClose` / `onFullscreenChange`. HTML cha chuyển callback sang native handler; Flutter tiếp tục kiểm tra URL host.
 - `barrierDismissible: false` và `PopScope(canPop: false)` chặn bấm ngoài/Back. Không có nút X Flutter; dùng nút thu nhỏ trên website để đóng.
 - V2 có nút thử lại và nút đóng khi xảy ra lỗi tải được phát hiện.
 
-HTML/CSS trong `chatbot_widget_host.dart` cho iframe phủ kín WebView. Nếu FE thay class của khung trang, kiểm tra lại các selector trong `removeFrameInsets()`.
+V2 dùng `widget.js?mode=mobile&auto_init=false`. FE tự mở chat, không tạo launcher/greeting bubble ngoài khung chat và cho iframe phủ kín WebView khi resize. Flutter chỉ quản lý kích thước Dialog, auth/context và trạng thái tải; HTML host không inject CSS vào iframe, không dùng `MutationObserver` hoặc truy cập `window.__chatWidget` / `_authBridge`.
+
+Cần deploy bản FE có hỗ trợ mobile layout và callback công khai trước khi chạy bản Flutter này. Tham số `v` chỉ đổi cache key, không thay thế bước deploy. `initialized` nghĩa là `ChatWidget.init()` đã trả instance, chưa xác nhận hội thoại/API sẵn sàng.
 
 ## 5. Nút mở chatbot bằng avatar GIF
 

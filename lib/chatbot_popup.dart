@@ -9,14 +9,13 @@ import 'chatbot_config.dart';
 const chatbotUrl =
     '$chatbotBaseUrl/embed'
     '?id=640fd94e-0b78-4522-83ae-e9860c5ff947'
-    '&mode=widget'
+    '&mode=mobile'
     '&client_id=ChatBot_App'
     '&session_id=9ee79dce-d94a-4d08-b04a-68246796f012'
     '&color=088c45'
     '&language=en'
-    '&position=bottom-right'
     '&auto_open=true'
-    '&v=1791810360173';
+    '&v=mobile-callbacks-1';
 
 class ChatbotPopup extends StatefulWidget {
   const ChatbotPopup({super.key});
@@ -26,44 +25,6 @@ class ChatbotPopup extends StatefulWidget {
 }
 
 class _ChatbotPopupState extends State<ChatbotPopup> {
-  // Flutter owns the popup insets; remove the web page's mobile safe-area padding.
-  static const _removePageInsetsScript = r'''
-(() => {
-  if (window.location.pathname !== '/embed') return;
-  const apply = () => {
-    let style = document.getElementById('flutter-chatbot-page-insets');
-    if (!style) {
-      style = document.createElement('style');
-      style.id = 'flutter-chatbot-page-insets';
-      (document.head || document.documentElement).appendChild(style);
-    }
-    style.textContent = `
-      html, body, #root, .app, .chat-app-fullscreen, .chat-app {
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-      html, body, #root, .app, .chat-app-fullscreen {
-        width: 100% !important;
-        height: 100% !important;
-      }
-      .chat-widget, .widget-container {
-        width: 100% !important;
-        height: 100% !important;
-        max-height: none !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        position: absolute !important;
-        inset: 0 !important;
-        border-radius: 0 !important;
-        box-shadow: none !important;
-      }
-    `;
-  };
-  if (document.documentElement) apply();
-  else document.addEventListener('DOMContentLoaded', apply, { once: true });
-})();
-''';
-
   static final _widgetBridgeScript =
       r'''
 (() => {
@@ -162,10 +123,6 @@ class _ChatbotPopupState extends State<ChatbotPopup> {
               InAppWebView(
                 initialUserScripts: UnmodifiableListView([
                   UserScript(
-                    source: _removePageInsetsScript,
-                    injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
-                  ),
-                  UserScript(
                     source: _widgetBridgeScript,
                     injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
                   ),
@@ -189,9 +146,6 @@ class _ChatbotPopupState extends State<ChatbotPopup> {
                 },
                 onLoadStop: (controller, url) async {
                   if (!mounted) return;
-                  await controller.evaluateJavascript(
-                    source: _removePageInsetsScript,
-                  );
                   await controller.evaluateJavascript(
                     source: _widgetBridgeScript,
                   );

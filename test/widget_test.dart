@@ -135,14 +135,14 @@ void main() {
       isNot(contains('fake-chatbot-access-token')),
     );
     final handlers = platform.controller.handlers;
-    expect(await handlers['getToken']!([]), 'fake-chatbot-access-token-0');
+    expect(await handlers['getToken']!([]), 'fake-chatbot-token-0');
     expect(await handlers['getLanguage']!([]), 'en');
-    expect(await handlers['getEmployeeCode']!([]), 'EMP_TEST_001');
+    expect(await handlers['getEmployeeCode']!([]), 'TLG-100215');
     expect(
       await handlers['onTokenRefresh']!([]),
       'fake-chatbot-access-token-1',
     );
-    expect(await handlers['getToken']!([]), 'fake-chatbot-access-token-1');
+    expect(await handlers['getToken']!([]), 'fake-chatbot-token-1');
     await handlers['chatbotV2Status']!(['initialized']);
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);

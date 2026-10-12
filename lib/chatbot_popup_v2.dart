@@ -46,7 +46,7 @@ class _ChatbotPopupV2State extends State<ChatbotPopupV2> {
         callback: (_) async {
           if (!await _isHost(controller)) return null;
           return switch (name) {
-            'getToken' => 'fake-chatbot-token-${_refreshCount}',
+            'getToken' => 'fake-chatbot-token-$_refreshCount',
             'onTokenRefresh' => 'fake-chatbot-access-token-${++_refreshCount}',
             'getLanguage' => 'en',
             'getEmployeeCode' => 'TLG-100215',
