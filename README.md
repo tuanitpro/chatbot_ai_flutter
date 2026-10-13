@@ -9,7 +9,7 @@ Project mẫu mở chatbot trong popup bằng `flutter_inappwebview`, với hai 
 | Token và thông tin người dùng | Chưa tích hợp auth bridge | Có getter qua JavaScript bridge |
 | Trường hợp sử dụng | Chat public, không cần truyền token từ app | Chat cần token, employeeCode, ngôn ngữ và renew token |
 
-App mẫu trong `lib/main.dart` đang mở **V2**. V2 hiện có dữ liệu xác thực thử nghiệm trong code; cần thay bằng auth service của app trước khi sử dụng thực tế. Luồng refresh trong bản mẫu vẫn trả token giả.
+Màn hình chính trong `lib/main.dart` cho phép chọn **V1 · Direct link** hoặc **V2 · Widget + bridge** (mặc định V2), kèm mô tả và tên widget Flutter để developer dễ phân biệt. Chọn phiên bản rồi nhấn avatar để mở popup tương ứng. V2 hiện có dữ liệu xác thực thử nghiệm trong code; cần thay bằng auth service của app trước khi sử dụng thực tế. Luồng refresh trong bản mẫu vẫn trả token giả.
 
 ## 1. Chuẩn bị project
 
@@ -59,7 +59,23 @@ Chi tiết tại [PATCH.md](third_party/flutter_inappwebview_android/PATCH.md). 
 
 ### iOS
 
-Chạy `flutter pub get`, sau đó build/run bằng Flutter như thông thường để cài plugin native. Các URL mẫu dùng HTTPS. Bản tích hợp script/iframe đã được thử trên Android emulator; cần kiểm tra thêm trên iOS, đặc biệt origin của HTML cha và hành vi bàn phím. Ví dụ hiện tại chưa triển khai quyền camera/microphone hoặc upload file.
+Dự án yêu cầu iOS 15.0 trở lên. Trên macOS, cài Xcode và CocoaPods trước khi chạy plugin native:
+
+```bash
+brew install cocoapods
+pod --version
+flutter doctor -v
+flutter pub get
+cd ios
+pod install
+cd ..
+flutter devices
+flutter run -d <ios-device-id>
+```
+
+Thay `<ios-device-id>` bằng ID simulator hoặc thiết bị iOS từ `flutter devices`. Nếu IDE vẫn báo `CocoaPods not installed or not in valid state`, mở lại IDE sau khi cài và kiểm tra `pod --version` trong terminal của IDE. Khi mở bằng Xcode, dùng `ios/Runner.xcworkspace`.
+
+Các URL mẫu dùng HTTPS. Cần kiểm tra thêm origin của HTML cha và hành vi bàn phím trên iOS. Ví dụ hiện tại chưa triển khai quyền camera/microphone hoặc upload file.
 
 ## 2. Cấu hình server và URL params
 

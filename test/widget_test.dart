@@ -1,3 +1,4 @@
+import 'package:chatbot_ai_flutter/chatbot_popup.dart';
 import 'package:chatbot_ai_flutter/chatbot_popup_v2.dart';
 import 'package:chatbot_ai_flutter/chatbot_widget_host.dart';
 import 'package:chatbot_ai_flutter/main.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 class _TestWebViewPlatform extends InAppWebViewPlatform {
   InAppWebViewInitialData? initialData;
+  URLRequest? initialUrlRequest;
   bool disposed = false;
   final controller = _TestController();
 
@@ -15,6 +17,7 @@ class _TestWebViewPlatform extends InAppWebViewPlatform {
     PlatformInAppWebViewWidgetCreationParams params,
   ) {
     initialData = params.initialData;
+    initialUrlRequest = params.initialUrlRequest;
     params.onWebViewCreated?.call(params.controllerFromPlatform!(controller));
     return _TestWebView(params, () => disposed = true);
   }
@@ -58,6 +61,56 @@ class _TestWebView extends PlatformInAppWebViewWidget {
 }
 
 void main() {
+  testWidgets('Version selection opens the corresponding chatbot popup', (
+    tester,
+  ) async {
+    final previousPlatform = InAppWebViewPlatform.instance;
+    final platform = _TestWebViewPlatform();
+    InAppWebViewPlatform.instance = platform;
+    addTearDown(() {
+      if (previousPlatform != null) {
+        InAppWebViewPlatform.instance = previousPlatform;
+      }
+    });
+
+    await tester.pumpWidget(const MyApp());
+    expect(find.byTooltip('Mở chatbot V2'), findsOneWidget);
+
+    await tester.tap(find.text('V1 · Direct link'));
+    await tester.pump();
+    expect(find.byTooltip('Mở chatbot V1'), findsOneWidget);
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    expect(find.byType(ChatbotPopup), findsOneWidget);
+    expect(find.byType(ChatbotPopupV2), findsNothing);
+    expect(platform.initialUrlRequest?.url.toString(), chatbotUrl);
+    expect(platform.initialData, isNull);
+
+    platform.controller.url = WebUri(chatbotUrl);
+    await platform.controller.handlers['chatbotWidgetControl']!([
+      'CHAT_CLOSE',
+      {},
+    ]);
+    await tester.pumpAndSettle();
+    expect(find.byType(ChatbotPopup), findsNothing);
+    expect(find.byTooltip('Mở chatbot V1'), findsOneWidget);
+
+    await tester.tap(find.text('V2 · Widget + bridge'));
+    await tester.pump();
+    platform.controller.url = WebUri(chatbotWidgetHostUrl);
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pump();
+    await platform.controller.handlers['chatbotV2Status']!(['initialized']);
+    await tester.pumpAndSettle();
+    expect(find.byType(ChatbotPopupV2), findsOneWidget);
+    expect(platform.initialData?.baseUrl.toString(), chatbotWidgetHostUrl);
+    expect(platform.initialUrlRequest, isNull);
+
+    await platform.controller.handlers['chatbotV2Control']!(['CHAT_CLOSE', {}]);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Web controls expand, restore, and close the Flutter popup', (
     tester,
   ) async {
